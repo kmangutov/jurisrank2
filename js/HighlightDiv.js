@@ -1,21 +1,120 @@
 
+var clone = function(oldObject) {
+	return JSON.parse(JSON.stringify(oldObject));
+}
+
 var HighlightDiv = (function() {
 	
+	this.that = this;
 	this.highlights = [];
 	this.canvasHandle;
 
 	var CLASS_HOVER = "highlight-hover";
 	var colors = ['#ffb7b7', '#a8d1ff', '#fff2a8', '#b3ff99', '#9999ff', '#99e6ff', '  #cc99ff', '#ff99e6'];
 
-	this.highlightStart = -1;
+	this.selection = {
+		enabled: false,
+		start: -1,
+		end: -1
+	}
+
+	var selectWordIndex = function(i) {
+		return $("span:nth-child(" + (i * 2 + 1) + ")");
+		/*return $("[data-word-index]").filter(function() {
+			return $(this).data('word-index') == i;
+		});*/
+	}
+
+	var selectBrIndex = function(i) {
+		return $("span:nth-child(" + (i * 2) + ")");
+		/*return $("[data-word-index]").filter(function() {
+			return $(this).data('word-index') == i;
+		});*/
+	}
+
+	var selectionDiff = function(a, b) {
+
+
+
+		if(a.enabled == false) {
+			//initiate
+
+			console.log("a.enabled == false")
+
+			for(var i = 0; i < (b.end-b.start) + 1; i++) {
+				//$("[data-word-index=" + i + "]").css("background-color", colors[0]);
+				console.log("highlgihting " + i + " (" + b.start +"," + b.end + ")")
+				selectWordIndex(i + b.start).css("background-color", colors[0]);
+			} 
+		} else {
+			//perform diff
+
+			var diff = b.end - a.end;
+			//if it's positive, highlight more at the end
+			//if it's negative, remove highlights at beginning
+
+			if(diff > 0) {
+				for(var i = 0; i < diff + 1; i++) {
+					selectWordIndex(i + a.end).css("background-color", colors[0]);
+				}
+			}
+		}
+	}
 
 	var init = function(id) {
 		canvasHandle = $(id);
 		console.log("HighlightDiv::init");
 
-		$(".word_node").mousedown(function() {
-			
+		selectWordIndex(1).css("background-color", colors[0]);
+		selectWordIndex(2).css("background-color", colors[1]);
+
+
+		$(".word-node").mousedown(function() {
+			var id = $(this).data("word-index");
+
+			var oldSelection = that.selection;
+			var newSelection = {
+				enabled: true,
+				start: id,
+				end: id
+			}
+
+			selectionDiff(oldSelection, newSelection);
+			that.selection = newSelection;
 		});
+
+		$(".word-node").mouseover(function() {
+
+			if(that.selection.enabled) {
+				var id = $(this).data("word-index");
+
+
+
+				var oldSelection = that.selection;
+				var newSelection = {
+					enabled: true,
+					start: oldSelection.start,
+					end: id
+				}
+
+				console.log(JSON.stringify(newSelection));
+
+				selectionDiff(oldSelection, newSelection);
+				that.selection = newSelection;
+			}
+		});
+
+		$(".word-node").mouseup(function() {
+
+			that.selection = {
+				enabled: false,
+				start: -1,
+				end: -1
+			}
+
+		});
+
+
 
 		/*$(".word-node").mouseover(function() {
 			$(this).css("background-color", colors[0]);
