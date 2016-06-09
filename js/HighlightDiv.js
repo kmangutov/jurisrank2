@@ -39,28 +39,32 @@ var HighlightDiv = (function() {
 				selectWordIndex(i + b.start).css("background-color", colors[0]);
 			} 
 		} else {
-			//perform diff
+			//begin, end, enable/disable
+			var diffA = parseInt(b.start - a.start);
+			var diffB = parseInt(b.end - a.end);
 
-			var diff = parseInt(b.end - a.end);
-			//if it's positive, highlight more at the end
-			//if it's negative, remove highlights at beginning
+			if(diffB != 0.0) {
+				var diff = parseInt(b.end - a.end);
+				//if it's positive, highlight more at the end
+				//if it's negative, remove highlights at beginning
 
-			console.log("diff: " + a.end + " to " + (a.end + diff + 1.0));
+				console.log("diff: " + a.end + " to " + (a.end + diff + 1.0));
 
-			if(diff > 0) {
-				for(var i = 0; i < diff + 1; i++) {
-					selectWordIndex(i + a.end).css("background-color", colors[0]);
-					selectBrIndex(i + a.end).css("background-color", colors[0]);
+				if(diff > 0) {
+					for(var i = 0; i < diff + 1; i++) {
+						selectWordIndex(i + a.end).css("background-color", colors[0]);
+						selectBrIndex(i + a.end).css("background-color", colors[0]);
+					}
+				} else if (diff < 0) {
+
+					var begin = (a.end + diff) + 1;
+					var end = a.end + 1;
+
+					for(var i = begin; i < end; i++) {
+						selectWordIndex(i).css("background-color", "");
+						selectBrIndex(i).css("background-color", "");
+					}			
 				}
-			} else if (diff < 0) {
-
-				var begin = (a.end + diff) + 1;
-				var end = a.end + 1;
-
-				for(var i = begin; i < end; i++) {
-					selectWordIndex(i).css("background-color", "");
-					selectBrIndex(i).css("background-color", "");
-				}			
 			}
 		}
 	}
