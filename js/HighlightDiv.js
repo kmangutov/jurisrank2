@@ -20,21 +20,13 @@ var HighlightDiv = (function() {
 
 	var selectWordIndex = function(i) {
 		return $("span:nth-child(" + (i * 2 + 1) + ")");
-		/*return $("[data-word-index]").filter(function() {
-			return $(this).data('word-index') == i;
-		});*/
 	}
 
 	var selectBrIndex = function(i) {
 		return $("span:nth-child(" + (i * 2) + ")");
-		/*return $("[data-word-index]").filter(function() {
-			return $(this).data('word-index') == i;
-		});*/
 	}
 
 	var selectionDiff = function(a, b) {
-
-
 
 		if(a.enabled == false) {
 			//initiate
@@ -58,6 +50,7 @@ var HighlightDiv = (function() {
 			if(diff > 0) {
 				for(var i = 0; i < diff + 1; i++) {
 					selectWordIndex(i + a.end).css("background-color", colors[0]);
+					selectBrIndex(i + a.end).css("background-color", colors[0]);
 				}
 			} else if (diff < 0) {
 
@@ -66,6 +59,7 @@ var HighlightDiv = (function() {
 
 				for(var i = begin; i < end; i++) {
 					selectWordIndex(i).css("background-color", "");
+					selectBrIndex(i).css("background-color", "");
 				}			
 			}
 		}
@@ -123,17 +117,6 @@ var HighlightDiv = (function() {
 			}
 
 		});
-
-
-
-		/*$(".word-node").mouseover(function() {
-			$(this).css("background-color", colors[0]);
-		});*/
-
-		/*$(".word-node").mouseleave(function() {
-			$(this).css("background-color", "");
-		});*/
-		
 	}
 
 	return function(id) {
