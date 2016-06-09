@@ -14,8 +14,8 @@ var HighlightDiv = (function() {
 
 	this.selection = {
 		enabled: false,
-		start: -1,
-		end: -1
+		start: -1.0,
+		end: -1.0
 	}
 
 	var selectWordIndex = function(i) {
@@ -49,14 +49,24 @@ var HighlightDiv = (function() {
 		} else {
 			//perform diff
 
-			var diff = b.end - a.end;
+			var diff = parseInt(b.end - a.end);
 			//if it's positive, highlight more at the end
 			//if it's negative, remove highlights at beginning
+
+			console.log("diff: " + a.end + " to " + (a.end + diff + 1.0));
 
 			if(diff > 0) {
 				for(var i = 0; i < diff + 1; i++) {
 					selectWordIndex(i + a.end).css("background-color", colors[0]);
 				}
+			} else if (diff < 0) {
+
+				var begin = (a.end + diff) + 1;
+				var end = a.end + 1;
+
+				for(var i = begin; i < end; i++) {
+					selectWordIndex(i).css("background-color", "");
+				}			
 			}
 		}
 	}
@@ -70,7 +80,7 @@ var HighlightDiv = (function() {
 
 
 		$(".word-node").mousedown(function() {
-			var id = $(this).data("word-index");
+			var id = parseInt($(this).data("word-index"));
 
 			var oldSelection = that.selection;
 			var newSelection = {
@@ -86,7 +96,7 @@ var HighlightDiv = (function() {
 		$(".word-node").mouseover(function() {
 
 			if(that.selection.enabled) {
-				var id = $(this).data("word-index");
+				var id = parseInt($(this).data("word-index"));
 
 
 
@@ -108,8 +118,8 @@ var HighlightDiv = (function() {
 
 			that.selection = {
 				enabled: false,
-				start: -1,
-				end: -1
+				start: -1.0,
+				end: -1.0
 			}
 
 		});
