@@ -14,9 +14,11 @@ var HighlightDiv = (function() {
 
 	this.selection = {
 		enabled: false,
-		start: -1.0,
-		end: -1.0
+		end: -1.0,
+		root: -1.0
 	}
+
+
 
 	var selectWordIndex = function(i) {
 		return $("span:nth-child(" + (i * 2 + 1) + ")");
@@ -28,19 +30,34 @@ var HighlightDiv = (function() {
 
 	var selectionDiff = function(a, b) {
 
+		var bStart = Math.min(b.end, b.root);
+		var bEnd = Math.max(b.end, b.root);
+
 		if(a.enabled == false) {
 			//initiate
 
-			console.log("a.enabled == false")
+			for(var i = bStart; i < bEnd + 1; i++) {
+				selectWordIndex(i).css("background-color", colors[0]);
+				selectBrIndex(i).css("background-color", colors[0]);
+			}
 
-			for(var i = 0; i < (b.end-b.start) + 1; i++) {
-				//$("[data-word-index=" + i + "]").css("background-color", colors[0]);
-				console.log("highlgihting " + i + " (" + b.start +"," + b.end + ")")
-				selectWordIndex(i + b.start).css("background-color", colors[0]);
-			} 
 		} else {
 			//begin, end, enable/disable
-			var diffA = parseInt(b.start - a.start);
+
+			var aStart = Math.min(a.end, a.root);
+			var aEnd = Math.max(a.end, a.root);
+
+			for(var i = aStart; i < aEnd + 1; i++) {
+				selectWordIndex(i).css("background-color", "");
+				selectBrIndex(i).css("background-color", "");
+			}
+
+			for(var i = bStart; i < bEnd + 1; i++) {
+				selectWordIndex(i).css("background-color", colors[0]);
+				selectBrIndex(i).css("background-color", colors[0]);
+			}
+
+			/*var diffA = parseInt(b.start - a.start);
 			var diffB = parseInt(b.end - a.end);
 
 			if(diffB != 0.0) {
@@ -65,7 +82,7 @@ var HighlightDiv = (function() {
 						selectBrIndex(i).css("background-color", "");
 					}			
 				}
-			}
+			}*/
 		}
 	}
 
@@ -83,8 +100,8 @@ var HighlightDiv = (function() {
 			var oldSelection = that.selection;
 			var newSelection = {
 				enabled: true,
-				start: id,
-				end: id
+				end: id,
+				root: id
 			}
 
 			selectionDiff(oldSelection, newSelection);
@@ -94,15 +111,17 @@ var HighlightDiv = (function() {
 		$(".word-node").mouseover(function() {
 
 			if(that.selection.enabled) {
+
 				var id = parseInt($(this).data("word-index"));
-
-
-
 				var oldSelection = that.selection;
+
+				console.log("mouseover: " + id + " old.start: " + oldSelection.start);
+
+				
 				var newSelection = {
 					enabled: true,
-					start: oldSelection.start,
-					end: id
+					end: id,
+					root: oldSelection.root
 				}
 
 				console.log(JSON.stringify(newSelection));
@@ -114,10 +133,15 @@ var HighlightDiv = (function() {
 
 		$(".word-node").mouseup(function() {
 
+			if(that.selection.enabled) {
+				highlights.push(that.selection);
+				console.log(JSON.stringify(highlights))
+			}
+
 			that.selection = {
 				enabled: false,
-				start: -1.0,
-				end: -1.0
+				end: -1.0,
+				root: -1.0
 			}
 
 		});
