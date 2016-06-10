@@ -3,22 +3,53 @@ var clone = function(oldObject) {
 	return JSON.parse(JSON.stringify(oldObject));
 }
 
+
+function Selection(root, enabled) {
+	this.enabled = enabled;
+	this.root = root;
+	this.end = root;
+}
+
+Selection.prototype.start = function() {
+	return Math.min(this.end, this.root);
+}
+
+Selection.prototype.stop = function() {
+	return Math.max(this.end, this.root);
+}
+
 var HighlightDiv = (function() {
 	
 	this.that = this;
 	this.highlights = [];
 	this.canvasHandle;
 
-	var CLASS_HOVER = "highlight-hover";
-	var colors = ['#ffb7b7', '#a8d1ff', '#fff2a8', '#b3ff99', '#9999ff', '#99e6ff', '  #cc99ff', '#ff99e6'];
+	this.COLORS = ['#ffb7b7', '#a8d1ff', '#fff2a8', '#b3ff99', '#9999ff', '#99e6ff', '  #cc99ff', '#ff99e6'];
+	this.selectedColor = 0;
 
-	this.selection = {
-		enabled: false,
-		end: -1.0,
-		root: -1.0
+	this.selection = new Selection(-1, false);
+	this.wordStates = {};
+
+	var wordEditable = function(index) {
+
+		console.log("word " + index + " in map: " + (index in wordStates));
+		return !(index in wordStates && wordStates[index] == true);
 	}
 
+	var commitHighlight = function() {
+		highlights.push(that.selection);
+		var start = that.selection.start();
+		var end = that.selection.stop();
 
+		for(var i = start; i <= end; i++) {
+			wordStates[i] = true;
+		}
+
+		console.log("commit to wordStates: " + JSON.stringify(wordStates));
+
+		that.selection = new Selection(-1, false);
+		selectedColor = (selectedColor + 1) % COLORS.length;
+	}
 
 	var selectWordIndex = function(i) {
 		return $("span:nth-child(" + (i * 2 + 1) + ")");
@@ -30,59 +61,40 @@ var HighlightDiv = (function() {
 
 	var selectionDiff = function(a, b) {
 
-		var bStart = Math.min(b.end, b.root);
-		var bEnd = Math.max(b.end, b.root);
+		var bStart = b.start();
+		var bEnd = b.stop();
 
 		if(a.enabled == false) {
 			//initiate
 
-			for(var i = bStart; i < bEnd + 1; i++) {
-				selectWordIndex(i).css("background-color", colors[0]);
-				selectBrIndex(i).css("background-color", colors[0]);
+			for(var i = bStart; i <= bEnd; i++) {
+
+				if(wordEditable(i)) {
+					selectWordIndex(i).css("background-color", COLORS[selectedColor]);
+					selectBrIndex(i).css("background-color", COLORS[selectedColor]);
+				}
 			}
 
 		} else {
 			//begin, end, enable/disable
 
-			var aStart = Math.min(a.end, a.root);
-			var aEnd = Math.max(a.end, a.root);
+			var aStart = a.start();
+			var aEnd = a.stop();
 
-			for(var i = aStart; i < aEnd + 1; i++) {
-				selectWordIndex(i).css("background-color", "");
-				selectBrIndex(i).css("background-color", "");
-			}
+			for(var i = aStart; i <= aEnd; i++) {
 
-			for(var i = bStart; i < bEnd + 1; i++) {
-				selectWordIndex(i).css("background-color", colors[0]);
-				selectBrIndex(i).css("background-color", colors[0]);
-			}
-
-			/*var diffA = parseInt(b.start - a.start);
-			var diffB = parseInt(b.end - a.end);
-
-			if(diffB != 0.0) {
-				var diff = parseInt(b.end - a.end);
-				//if it's positive, highlight more at the end
-				//if it's negative, remove highlights at beginning
-
-				console.log("diff: " + a.end + " to " + (a.end + diff + 1.0));
-
-				if(diff > 0) {
-					for(var i = 0; i < diff + 1; i++) {
-						selectWordIndex(i + a.end).css("background-color", colors[0]);
-						selectBrIndex(i + a.end).css("background-color", colors[0]);
-					}
-				} else if (diff < 0) {
-
-					var begin = (a.end + diff) + 1;
-					var end = a.end + 1;
-
-					for(var i = begin; i < end; i++) {
-						selectWordIndex(i).css("background-color", "");
-						selectBrIndex(i).css("background-color", "");
-					}			
+				if(wordEditable(i)) {
+					selectWordIndex(i).css("background-color", "");
+					selectBrIndex(i).css("background-color", "");
 				}
-			}*/
+			}
+
+			for(var i = bStart; i <= bEnd; i++) {
+				if(wordEditable(i)) {
+					selectWordIndex(i).css("background-color", COLORS[selectedColor]);
+					selectBrIndex(i).css("background-color", COLORS[selectedColor]);
+				}
+			}
 		}
 	}
 
@@ -90,19 +102,11 @@ var HighlightDiv = (function() {
 		canvasHandle = $(id);
 		console.log("HighlightDiv::init");
 
-		selectWordIndex(1).css("background-color", colors[0]);
-		selectWordIndex(2).css("background-color", colors[1]);
-
-
 		$(".word-node").mousedown(function() {
 			var id = parseInt($(this).data("word-index"));
 
 			var oldSelection = that.selection;
-			var newSelection = {
-				enabled: true,
-				end: id,
-				root: id
-			}
+			var newSelection = new Selection(id, true);
 
 			selectionDiff(oldSelection, newSelection);
 			that.selection = newSelection;
@@ -117,12 +121,8 @@ var HighlightDiv = (function() {
 
 				console.log("mouseover: " + id + " old.start: " + oldSelection.start);
 
-				
-				var newSelection = {
-					enabled: true,
-					end: id,
-					root: oldSelection.root
-				}
+				var newSelection = new Selection(oldSelection.root, true);
+				newSelection.end = id + 1;
 
 				console.log(JSON.stringify(newSelection));
 
@@ -134,16 +134,8 @@ var HighlightDiv = (function() {
 		$(".word-node").mouseup(function() {
 
 			if(that.selection.enabled) {
-				highlights.push(that.selection);
-				console.log(JSON.stringify(highlights))
+				commitHighlight();
 			}
-
-			that.selection = {
-				enabled: false,
-				end: -1.0,
-				root: -1.0
-			}
-
 		});
 	}
 
