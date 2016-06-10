@@ -3,6 +3,15 @@ var clone = function(oldObject) {
 	return JSON.parse(JSON.stringify(oldObject));
 }
 
+var selectWordIndex = function(i) {
+	return $("span:nth-child(" + (i * 2 + 1) + ")");
+}
+
+var selectBrIndex = function(i) {
+	return $("span:nth-child(" + (i * 2) + ")");
+}
+
+////////////////
 
 function Selection(root, enabled) {
 	this.enabled = enabled;
@@ -17,6 +26,22 @@ Selection.prototype.start = function() {
 Selection.prototype.stop = function() {
 	return Math.max(this.end, this.root);
 }
+
+Selection.prototype.highlight = function(wordEditable, color) {
+	for(var i = this.start(); i <= this.stop(); i++) {
+
+		if(wordEditable(i)) {
+			selectWordIndex(i).css("background-color", color);
+			selectBrIndex(i).css("background-color", color);
+		}
+	}
+}
+
+Selection.prototype.clear = function(wordEditable) {
+	this.highlight(wordEditable, "");
+}
+
+////////////////
 
 var HighlightDiv = (function() {
 	
@@ -37,27 +62,33 @@ var HighlightDiv = (function() {
 	}
 
 	var commitHighlight = function() {
-		highlights.push(that.selection);
+
+		//abort if overlaps any highlight
 		var start = that.selection.start();
 		var end = that.selection.stop();
 
+		for(var i = start; i <= end; i++) {
+			if(!wordEditable(i)) {
+				console.log("attempted overlap aborted");
+				that.selection.clear(wordEditable);
+				that.selection = new Selection(-1, false);
+				return false;
+			}
+		}
+
+		//commit to highlights and wordStates
+		highlights.push(that.selection);
 		for(var i = start; i <= end; i++) {
 			wordStates[i] = true;
 		}
 
 		console.log("commit to wordStates: " + JSON.stringify(wordStates));
 
-		that.selection = new Selection(-1, false);
+		//reset selection
 		selectedColor = (selectedColor + 1) % COLORS.length;
+		that.selection = new Selection(-1, false);
 	}
 
-	var selectWordIndex = function(i) {
-		return $("span:nth-child(" + (i * 2 + 1) + ")");
-	}
-
-	var selectBrIndex = function(i) {
-		return $("span:nth-child(" + (i * 2) + ")");
-	}
 
 	var selectionDiff = function(a, b) {
 
@@ -67,13 +98,7 @@ var HighlightDiv = (function() {
 		if(a.enabled == false) {
 			//initiate
 
-			for(var i = bStart; i <= bEnd; i++) {
-
-				if(wordEditable(i)) {
-					selectWordIndex(i).css("background-color", COLORS[selectedColor]);
-					selectBrIndex(i).css("background-color", COLORS[selectedColor]);
-				}
-			}
+			b.highlight(wordEditable, COLORS[selectedColor]);
 
 		} else {
 			//begin, end, enable/disable
@@ -81,20 +106,8 @@ var HighlightDiv = (function() {
 			var aStart = a.start();
 			var aEnd = a.stop();
 
-			for(var i = aStart; i <= aEnd; i++) {
-
-				if(wordEditable(i)) {
-					selectWordIndex(i).css("background-color", "");
-					selectBrIndex(i).css("background-color", "");
-				}
-			}
-
-			for(var i = bStart; i <= bEnd; i++) {
-				if(wordEditable(i)) {
-					selectWordIndex(i).css("background-color", COLORS[selectedColor]);
-					selectBrIndex(i).css("background-color", COLORS[selectedColor]);
-				}
-			}
+			a.clear(wordEditable);
+			b.highlight(wordEditable, COLORS[selectedColor]);
 		}
 	}
 
@@ -122,7 +135,7 @@ var HighlightDiv = (function() {
 				console.log("mouseover: " + id + " old.start: " + oldSelection.start);
 
 				var newSelection = new Selection(oldSelection.root, true);
-				newSelection.end = id + 1;
+				newSelection.end = id;
 
 				console.log(JSON.stringify(newSelection));
 
