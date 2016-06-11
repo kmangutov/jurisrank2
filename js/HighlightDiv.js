@@ -87,6 +87,7 @@ var HighlightDiv = (function() {
 			concat += selectWordIndex(i).text() + " ";
 		}
 		that.selection.text = concat.trim();
+		that.selection.id = highlights.length;
 		highlights.push(that.selection);
 
 		console.log("commit to wordStates: " + JSON.stringify(wordStates));
