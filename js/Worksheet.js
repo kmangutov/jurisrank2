@@ -3,8 +3,15 @@
 
 var worksheet = new Vue({
     el: '#app',
+
     data: {
         message: 'Hello Vue.js!'
+    },
+
+    methods: {
+    	delete: function(event) {
+    		highlightDiv.removeHighlight(0);
+    	}
     }
 });
 

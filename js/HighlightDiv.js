@@ -30,7 +30,6 @@ Selection.prototype.stop = function() {
 
 Selection.prototype.highlight = function(wordEditable, color) {
 	for(var i = this.start(); i <= this.stop(); i++) {
-
 		if(wordEditable(i)) {
 			selectWordIndex(i).css("background-color", color);
 			selectBrIndex(i).css("background-color", color);
@@ -47,7 +46,8 @@ Selection.prototype.clear = function(wordEditable) {
 var HighlightDiv = (function() {
 	
 	this.that = this;
-	this.highlights = [];
+	this.highlights = {};
+	this.highlightsId = 0;
 	this.canvasHandle;
 
 	this.COLORS = ['#ffb7b7', '#a8d1ff', '#fff2a8', '#b3ff99', '#9999ff', '#99e6ff', '  #cc99ff', '#ff99e6'];
@@ -87,11 +87,14 @@ var HighlightDiv = (function() {
 			concat += selectWordIndex(i).text() + " ";
 		}
 		that.selection.text = concat.trim();
-		that.selection.id = highlights.length;
-		highlights.push(that.selection);
 
-		console.log("commit to wordStates: " + JSON.stringify(wordStates));
-		console.log("commit to highlights: " + JSON.stringify(highlights));
+		var newId = highlightsId++;
+		that.selection.id = newId;
+		highlights[newId] = that.selection;
+		//highlights.push(that.selection);
+
+		//console.log("commit to wordStates: " + JSON.stringify(wordStates));
+		//console.log("commit to highlights: " + JSON.stringify(highlights));
 
 		//reset selection
 		selectedColor = (selectedColor + 1) % COLORS.length;
@@ -99,7 +102,6 @@ var HighlightDiv = (function() {
 
 		//callback
 		if(highlightListener) {
-			console.log("calling callback")
 			highlightListener(highlights);
 		}
 	}
@@ -128,7 +130,6 @@ var HighlightDiv = (function() {
 
 	var init = function(id) {
 		canvasHandle = $(id);
-		console.log("HighlightDiv::init");
 
 		$(".word-node").mousedown(function() {
 			var id = parseInt($(this).data("word-index"));
@@ -171,8 +172,32 @@ var HighlightDiv = (function() {
 		init(id);
 		return {
 			addHighlightListener: function(f) {
-				console.log("HighlightDiv::addHighlightListener");
 				that.highlightListener = f;
+			},
+
+			// ugh how the fuck to refactor this shit
+			removeHighlight: function(id) {
+
+				//clear the highlight from UI
+				var data = that.highlights[id];
+				console.log(data);
+
+				//hack to clear highlights even tho they are committed
+				var makeWordEditable = function(){ return true; }
+				Selection.prototype.highlight.call(data, makeWordEditable, "");
+
+				//
+				var start = Selection.prototype.start.call(data);
+				var stop = Selection.prototype.stop.call(data);
+				for(var i = start; i <= stop; i++) {
+					wordStates[i] = false;
+				}
+
+				//update state
+				delete that.highlights[id];
+				if(highlightListener) {
+					highlightListener(highlights);
+				}
 			}
 		}
 	}
