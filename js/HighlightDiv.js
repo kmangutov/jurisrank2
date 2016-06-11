@@ -17,6 +17,7 @@ function Selection(root, enabled) {
 	this.enabled = enabled;
 	this.root = root;
 	this.end = root;
+	this.text = "";
 }
 
 Selection.prototype.start = function() {
@@ -55,6 +56,8 @@ var HighlightDiv = (function() {
 	this.selection = new Selection(-1, false);
 	this.wordStates = {};
 
+	this.highlightListener = null;
+
 	var wordEditable = function(index) {
 
 		console.log("word " + index + " in map: " + (index in wordStates));
@@ -77,16 +80,27 @@ var HighlightDiv = (function() {
 		}
 
 		//commit to highlights and wordStates
-		highlights.push(that.selection);
+		var concat = "";
+	
 		for(var i = start; i <= end; i++) {
 			wordStates[i] = true;
+			concat += selectWordIndex(i).text() + " ";
 		}
+		that.selection.text = concat.trim();
+		highlights.push(that.selection);
 
 		console.log("commit to wordStates: " + JSON.stringify(wordStates));
+		console.log("commit to highlights: " + JSON.stringify(highlights));
 
 		//reset selection
 		selectedColor = (selectedColor + 1) % COLORS.length;
 		that.selection = new Selection(-1, false);
+
+		//callback
+		if(highlightListener) {
+			console.log("calling callback")
+			highlightListener(highlights);
+		}
 	}
 
 
@@ -155,7 +169,10 @@ var HighlightDiv = (function() {
 	return function(id) {
 		init(id);
 		return {
-
+			addHighlightListener: function(f) {
+				console.log("HighlightDiv::addHighlightListener");
+				that.highlightListener = f;
+			}
 		}
 	}
 })();
