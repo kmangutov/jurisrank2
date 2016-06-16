@@ -13,6 +13,9 @@ var selectBrIndex = function(i) {
 
 ////////////////
 
+// represents a highlight. can be previous highlight or currently highlighted
+// root: start, end: finish. root not necessarily < end
+
 function Selection(root, enabled) {
 	this.enabled = enabled;
 	this.root = root;
@@ -106,7 +109,7 @@ var HighlightDiv = (function() {
 		}
 	}
 
-
+	// right now, A is highlighted selection. but now the user moved their mouse and B is the selection. update rendering
 	var selectionDiff = function(a, b) {
 
 		var bStart = b.start();
@@ -123,11 +126,13 @@ var HighlightDiv = (function() {
 			var aStart = a.start();
 			var aEnd = a.stop();
 
+			//can optimize this: figure out where we need to add or remove and just do that
 			a.clear(wordEditable);
 			b.highlight(wordEditable, COLORS[selectedColor]);
 		}
 	}
 
+	//bind mouseevents
 	var init = function(id) {
 		canvasHandle = $(id);
 
@@ -168,6 +173,7 @@ var HighlightDiv = (function() {
 		});
 	}
 
+	//constuctor and API
 	return function(id) {
 		init(id);
 		return {
